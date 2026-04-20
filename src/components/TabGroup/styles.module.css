@@ -1,0 +1,59 @@
+.tabGroup {
+  margin: 1.5rem 0;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tabList {
+  display: flex;
+  background: var(--ifm-color-emphasis-100);
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+  overflow-x: auto;
+}
+
+.tabButton {
+  padding: 0.75rem 1.25rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ifm-color-emphasis-700);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.tabButton:hover {
+  background: var(--ifm-color-emphasis-200);
+  color: var(--ifm-color-primary);
+}
+
+.tabButton.active {
+  color: var(--ifm-color-primary);
+  background: var(--ifm-background-surface-color);
+}
+
+.tabButton.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--ifm-color-primary);
+}
+
+.tabContent {
+  padding: 1.25rem;
+  background: var(--ifm-background-surface-color);
+}
+
+.tabContent p:first-child {
+  margin-top: 0;
+}
+
+.tabContent p:last-child {
+  margin-bottom: 0;
+}

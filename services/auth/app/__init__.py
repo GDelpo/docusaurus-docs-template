@@ -1,0 +1,1 @@
+"""Auth sidecar - package marker."""

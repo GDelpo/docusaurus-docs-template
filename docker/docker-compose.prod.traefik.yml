@@ -1,0 +1,197 @@
+# ============================================================================
+# Docs site - Docker Compose (Production with Traefik)
+# ============================================================================
+#
+# PREREQUISITES:
+#   1. Traefik running and reachable on the `traefik-public` network.
+#   2. Network created: docker network create traefik-public
+#   3. An identity service for LDAP/JWT auth (replace `identity_api` with your own).
+#   4. Internal DNS: docs.example.com -> your server's IP.
+#
+# USAGE:
+#   docker compose -f docker/docker-compose.prod.traefik.yml up -d --build
+#   docker compose -f docker/docker-compose.prod.traefik.yml logs -f
+#
+# ACCESS:
+#   http://docs.example.com/           <- Docs (Docusaurus)
+#   http://docs.example.com/admin/     <- CMS editor
+#
+# ARCHITECTURE:
+#   Client -> Traefik -> ForwardAuth (auth sidecar) -> Nginx (static site)
+#   Client -> Traefik -> ForwardAuth (auth sidecar) -> CMS (editor)
+#   Auth sidecar -> Identity service
+#   CMS -> PostgreSQL (posts, media metadata)
+#   CMS -> docs volume (publish -> rebuild)
+#
+# TRAEFIK ROUTING:
+#   docs.example.com/*           -> Docs + Admin UI (ForwardAuth protected)
+#   docs.example.com/auth/*      -> Auth sidecar (login/logout, no auth)
+#   docs.example.com/admin/api/* -> CMS API (ForwardAuth protected)
+# ============================================================================
+
+name: docusaurus-docs
+
+services:
+  # ---------------------------------------------------------------------------
+  # Nginx serving the static Docusaurus site (ForwardAuth protected)
+  # ---------------------------------------------------------------------------
+  docs:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: docusaurus-docs:latest
+    container_name: docusaurus_docs
+    restart: unless-stopped
+    depends_on:
+      auth:
+        condition: service_started
+    volumes:
+      - ../docs:/usr/share/nginx/docs-source:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/nginx-health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+
+      # Router: serves everything except /auth/* and /admin/api/*.
+      # Admin UI pages live inside Docusaurus and are served by Nginx.
+      - "traefik.http.routers.docs-site.rule=Host(`docs.example.com`) && !PathPrefix(`/auth`) && !PathPrefix(`/admin/api`)"
+      - "traefik.http.routers.docs-site.entrypoints=web"
+      - "traefik.http.routers.docs-site.service=docs-site"
+      - "traefik.http.routers.docs-site.middlewares=docs-fwd@docker,secure-headers@file,compress@file"
+
+      # ForwardAuth: check session before serving content.
+      - "traefik.http.middlewares.docs-fwd.forwardauth.address=http://docs_auth:8000/verify"
+      - "traefik.http.middlewares.docs-fwd.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.docs-fwd.forwardauth.authResponseHeaders=X-Auth-User,X-Auth-Role"
+
+      - "traefik.http.services.docs-site.loadbalancer.server.port=80"
+      - "traefik.http.services.docs-site.loadbalancer.healthcheck.path=/nginx-health"
+      - "traefik.http.services.docs-site.loadbalancer.healthcheck.interval=30s"
+
+  # ---------------------------------------------------------------------------
+  # Auth sidecar (login/logout, session verification)
+  # ---------------------------------------------------------------------------
+  auth:
+    build:
+      context: ../services/auth
+      dockerfile: Dockerfile
+    image: docusaurus-docs-auth:latest
+    container_name: docs_auth
+    restart: unless-stopped
+    environment:
+      - IDENTITY_LOGIN_URL=${IDENTITY_LOGIN_URL:-http://identity_api:8080/api/v1/login}
+      - IDENTITY_ME_URL=${IDENTITY_ME_URL:-http://identity_api:8080/api/v1/me}
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+
+      # Router: /auth/* (login, logout) — NO ForwardAuth (must stay accessible)
+      - "traefik.http.routers.docs-auth.rule=Host(`docs.example.com`) && PathPrefix(`/auth`)"
+      - "traefik.http.routers.docs-auth.entrypoints=web"
+      - "traefik.http.routers.docs-auth.service=docs-auth"
+      - "traefik.http.services.docs-auth.loadbalancer.server.port=8000"
+
+  # ---------------------------------------------------------------------------
+  # CMS - Content Management System (API only). Admin UI lives in Docusaurus.
+  # ---------------------------------------------------------------------------
+  cms:
+    build:
+      context: ../services/cms
+      dockerfile: Dockerfile
+    image: docusaurus-docs-cms:latest
+    container_name: docs_cms
+    restart: unless-stopped
+    depends_on:
+      cms_db:
+        condition: service_healthy
+      auth:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${CMS_DB_USER:-cms}:${CMS_DB_PASSWORD:-cms}@cms_db:5432/${CMS_DB_NAME:-cms}
+      - IDENTITY_SERVICE_URL=${IDENTITY_SERVICE_URL:-http://identity_api:8080/api/v1}
+      - IDENTITY_EXTERNAL_URL=${IDENTITY_EXTERNAL_URL:-https://example.com/identity/api/v1}
+      - MEDIA_DIR=/app/media
+      - DOCS_DIR=/app/docs-source
+      - DOCS_SOURCE_DIR=/app/docs-source
+      - DEBUG=${CMS_DEBUG:-false}
+      # TODO: adjust the absolute path below to match where you clone this repo on the host.
+      - REBUILD_COMMAND=docker compose -f /opt/docusaurus-docs/docker/docker-compose.prod.traefik.yml --env-file /opt/docusaurus-docs/.env up -d --build --no-deps docs
+    volumes:
+      - cms-media:/app/media
+      - docs-content:/app/docs-content
+      - ../docs:/app/docs-source
+      - /var/run/docker.sock:/var/run/docker.sock
+      # TODO: match the REBUILD_COMMAND path above.
+      - /opt/docusaurus-docs:/opt/docusaurus-docs:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    networks:
+      - traefik-public
+      - cms-internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+
+      # Router: /admin/api/* (CMS API — ForwardAuth protected)
+      - "traefik.http.routers.docs-cms.rule=Host(`docs.example.com`) && PathPrefix(`/admin/api`)"
+      - "traefik.http.routers.docs-cms.entrypoints=web"
+      - "traefik.http.routers.docs-cms.service=docs-cms"
+      - "traefik.http.routers.docs-cms.priority=20"
+      - "traefik.http.routers.docs-cms.middlewares=docs-fwd@docker,secure-headers@file,compress@file"
+      - "traefik.http.services.docs-cms.loadbalancer.server.port=8000"
+
+  # ---------------------------------------------------------------------------
+  # CMS database (PostgreSQL)
+  # ---------------------------------------------------------------------------
+  cms_db:
+    image: postgres:17-alpine
+    container_name: docs_cms_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${CMS_DB_USER:-cms}
+      - POSTGRES_PASSWORD=${CMS_DB_PASSWORD:-cms}
+      - POSTGRES_DB=${CMS_DB_NAME:-cms}
+    volumes:
+      - cms-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CMS_DB_USER:-cms} -d ${CMS_DB_NAME:-cms}"]
+      interval: 10s
+      timeout: 3s
+      start_period: 10s
+      retries: 5
+    networks:
+      - cms-internal
+
+volumes:
+  cms-pgdata:
+    name: docusaurus-docs-cms-pgdata
+  cms-media:
+    name: docusaurus-docs-cms-media
+  docs-content:
+    name: docusaurus-docs-content
+
+networks:
+  traefik-public:
+    external: true
+  cms-internal:
+    driver: bridge

@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.docusaurus/
+
+# Build output (se genera en multi-stage)
+build/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker (evitar recursión, pero mantener nginx.conf)
+docker/docker-compose*
+docker/Dockerfile*
+
+# Backend services (tienen sus propios Dockerfiles)
+services/
+
+# Docs/scripts innecesarios en la imagen
+deploy.sh
+README.md
+babel.config.js

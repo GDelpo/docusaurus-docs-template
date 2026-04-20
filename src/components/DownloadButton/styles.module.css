@@ -1,0 +1,54 @@
+.downloadButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, var(--ifm-color-primary) 0%, var(--ifm-color-primary-dark) 100%);
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin: 0.5rem 0;
+}
+
+.downloadButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(32, 168, 216, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.downloadIcon {
+  font-size: 1.25rem;
+  margin-right: 0.75rem;
+}
+
+.downloadText {
+  display: flex;
+  flex-direction: column;
+}
+
+.downloadLabel {
+  font-size: 0.95rem;
+}
+
+.downloadMeta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  opacity: 0.85;
+  margin-top: 0.125rem;
+}
+
+.downloadFilename {
+  font-family: monospace;
+}
+
+.downloadSize {
+  opacity: 0.75;
+}
+
+.downloadSize::before {
+  content: "•";
+  margin-right: 0.5rem;
+}

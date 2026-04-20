@@ -1,0 +1,129 @@
+.indice {
+  margin: 1.5rem 0;
+}
+
+.seccion {
+  margin-bottom: 2rem;
+}
+
+.seccionTitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--ifm-color-primary);
+}
+
+.seccionIcon {
+  font-size: 1.25rem;
+}
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.contenidoCompacto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.categoria {
+  margin-bottom: 1rem;
+}
+
+.categoriaTitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.15rem;
+  color: var(--ifm-color-emphasis-800);
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.subcategoriaTitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 1rem;
+  color: var(--ifm-color-emphasis-700);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.categoriaIcon {
+  font-size: 1.1rem;
+}
+
+.docsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--ifm-color-emphasis-200);
+}
+
+.docLink {
+  display: flex;
+  align-items: center;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 6px;
+  background: var(--ifm-background-surface-color);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.15s ease;
+}
+
+.docLink:hover {
+  border-color: var(--ifm-color-primary);
+  background: var(--ifm-color-primary-lightest);
+  text-decoration: none;
+  transform: translateX(4px);
+}
+
+.docIcon {
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.docLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Modo compacto */
+.listaCompacta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-left: 0.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--ifm-color-emphasis-200);
+  margin-bottom: 0.75rem;
+}
+
+.linkCompacto {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  background: var(--ifm-color-emphasis-100);
+  border-radius: 16px;
+  font-size: 0.8rem;
+  text-decoration: none;
+  color: var(--ifm-font-color-base);
+  transition: all 0.15s ease;
+}
+
+.linkCompacto:hover {
+  background: var(--ifm-color-primary);
+  color: white;
+  text-decoration: none;
+}

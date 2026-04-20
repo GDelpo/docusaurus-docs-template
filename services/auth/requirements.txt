@@ -1,0 +1,18 @@
+# FastAPI and ASGI server
+fastapi==0.128.0
+starlette==0.50.0
+uvicorn[standard]==0.32.1
+gunicorn==23.0.0
+
+# Templates
+jinja2==3.1.6
+
+# Form data
+python-multipart==0.0.19
+
+# HTTP client (for calling the identity service)
+httpx==0.28.1
+
+# Settings
+pydantic==2.12.5
+pydantic-settings==2.12.0

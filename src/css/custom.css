@@ -1,0 +1,205 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #20a8d8;
+  --ifm-color-primary-dark: #1d97c2;
+  --ifm-color-primary-darker: #1b8fb8;
+  --ifm-color-primary-darkest: #167697;
+  --ifm-color-primary-light: #30b2e0;
+  --ifm-color-primary-lighter: #3bb6e2;
+  --ifm-color-primary-lightest: #5cc2e7;
+  
+  /* Mejoras tipográficas */
+  --ifm-font-family-base: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --ifm-heading-font-family: var(--ifm-font-family-base);
+  --ifm-font-size-base: 95%;
+  --ifm-line-height-base: 1.65;
+  
+  /* Sidebar */
+  --doc-sidebar-width: 280px;
+  
+  /* Code blocks */
+  --ifm-code-font-size: 85%;
+  --ifm-code-border-radius: 6px;
+  --ifm-code-padding-vertical: 0.1rem;
+  --ifm-code-padding-horizontal: 0.3rem;
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #20a8d8;
+  --ifm-color-primary-dark: #1d97c2;
+  --ifm-color-primary-darker: #1b8fb8;
+  --ifm-color-primary-darkest: #167697;
+  --ifm-color-primary-light: #30b2e0;
+  --ifm-color-primary-lighter: #3bb6e2;
+  --ifm-color-primary-lightest: #5cc2e7;
+  
+  --ifm-background-color: #1b1b1d;
+}
+
+/* Mejoras en las imágenes */
+article img {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  margin: 1rem 0;
+  max-width: 100%;
+}
+
+[data-theme='dark'] article img {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Tablas mejoradas */
+table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+table th {
+  background: var(--ifm-color-primary);
+  color: white;
+  font-weight: 600;
+  text-align: left;
+}
+
+table th, table td {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+}
+
+table tr:nth-child(even) {
+  background: var(--ifm-color-emphasis-100);
+}
+
+/* Admonitions mejorados */
+.alert {
+  border-radius: 8px;
+  border-left-width: 4px;
+}
+
+/* Links mejorados */
+article a:not(.hash-link) {
+  text-decoration: underline;
+  text-decoration-color: var(--ifm-color-primary-lighter);
+  text-underline-offset: 2px;
+}
+
+article a:hover {
+  text-decoration-color: var(--ifm-color-primary);
+}
+
+/* Headings con anchor visible en hover */
+.markdown h2:hover .hash-link,
+.markdown h3:hover .hash-link,
+.markdown h4:hover .hash-link {
+  opacity: 1;
+}
+
+/* Sidebar icons */
+.menu__link--sublist-caret::after {
+  background-size: 1.25rem 1.25rem;
+}
+
+/* Breadcrumbs */
+.breadcrumbs__link {
+  font-size: 0.85rem;
+}
+
+/* Pagination */
+.pagination-nav__label {
+  font-weight: 600;
+}
+
+/* ============================================
+   SEARCH BAR - Plugin @easyops-cn/docusaurus-search-local
+   ============================================ */
+
+/* Input de búsqueda más ancho */
+.navbar__search-input {
+  border-radius: 8px !important;
+  padding-left: 2.5rem !important;
+  min-width: 300px !important;
+  width: 300px !important;
+}
+
+/* Contenedor de búsqueda */
+.navbar__search {
+  min-width: 300px !important;
+}
+
+/* Selectores específicos del plugin search-local */
+nav.navbar input[type="search"],
+.navbar .aa-Input,
+.navbar input.aa-Input,
+.searchBarContainer_node_modules input,
+[class*="searchBarContainer"] input,
+[class*="searchBar"] input {
+  min-width: 300px !important;
+  width: 300px !important;
+  border-radius: 8px !important;
+}
+
+/* Wrapper del search */
+[class*="searchBarContainer"],
+.navbarSearchContainer_node_modules,
+[class*="navbarSearchContainer"] {
+  min-width: 300px !important;
+}
+
+/* DocSearch (por si se usa Algolia) */
+.DocSearch-Button {
+  min-width: 300px !important;
+  border-radius: 8px !important;
+  padding: 0 16px !important;
+}
+
+/* ============================================
+   NAVBAR - Orden de elementos (derecha)
+   ============================================ */
+
+/* Reordenar: búsqueda primero, toggle después */
+.navbar__items--right {
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Búsqueda va primero (order más bajo) */
+.navbar__items--right .navbar__search,
+.navbar__items--right [class*="searchBarContainer"],
+.navbar__items--right [class*="navbarSearchContainer"] {
+  order: 1 !important;
+  margin-right: 12px !important;
+}
+
+/* Toggle va después */
+.navbar__items--right [class*="colorModeToggle"],
+.navbar__items--right .toggle_vylO {
+  order: 2 !important;
+}
+
+/* Mantener el toggle original de Docusaurus (sol/luna) - sin modificaciones */
+
+/* Code block titles */
+.codeBlockTitle_node_modules {
+  background: var(--ifm-color-emphasis-200) !important;
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+}
+
+/* TOC mejoras */
+.table-of-contents__link:hover {
+  color: var(--ifm-color-primary);
+}
+
+.table-of-contents__link--active {
+  font-weight: 600;
+}
