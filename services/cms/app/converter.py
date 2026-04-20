@@ -1,8 +1,8 @@
 """DOCX image extraction utilities.
 
-Extrae imágenes en ORDEN VISUAL del documento (igual que markitdown), no en
-orden de relaciones. Esto garantiza que los placeholders ![...] generados por
-markitdown coincidan 1:1 con los archivos extraídos.
+Extracts images in VISUAL ORDER from the document (same as markitdown), not
+in relationships order. This ensures that the ![...] placeholders generated
+by markitdown match 1:1 with the extracted files.
 """
 
 import itertools
@@ -13,40 +13,40 @@ from docx import Document
 
 logger = logging.getLogger(__name__)
 
-# Atributos XML para referencias de imagen (DrawingML y VML)
+# XML attributes for image references (DrawingML and VML)
 _EMBED = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
 _R_ID  = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
 
 
 def extraer_imagenes_docx(path_docx: Path, output_folder: Path) -> list[Path]:
     """
-    Extrae imágenes del DOCX en orden visual y las guarda en output_folder.
-    Retorna una lista de Paths guardados en orden de aparición en el documento.
+    Extract images from the DOCX in visual order and save them into output_folder.
+    Returns a list of Paths saved in the order they appear in the document.
 
-    Usa doc.element.iter() para recorrer el XML en orden visual (igual que
-    markitdown al generar placeholders), evitando el orden de relaciones que
-    devuelve doc.part.rels.values() (que es el orden del archivo .rels, no
-    el orden de aparición en el texto).
+    Uses doc.element.iter() to walk the XML in visual order (same as
+    markitdown when generating placeholders), avoiding the relationships order
+    returned by doc.part.rels.values() (which is the order of the .rels file,
+    not the order of appearance in the text).
     """
     doc = Document(path_docx)
     output_folder.mkdir(parents=True, exist_ok=True)
 
-    # Mapa rId -> relación (solo imágenes)
+    # Map rId -> relationship (images only)
     rels_map = {
         rid: rel
         for rid, rel in doc.part.rels.items()
         if "image" in rel.reltype
     }
 
-    # Recorrer el XML del documento en orden visual para obtener los rIds
+    # Walk the document XML in visual order to collect rIds
     rids_en_orden: list[str] = []
     vistos: set[str] = set()
     for elem in doc.element.iter():
         tag = elem.tag.split("}")[-1] if "}" in elem.tag else elem.tag
         rid = None
-        if tag == "blip":          # DrawingML (imágenes inline modernas)
+        if tag == "blip":          # DrawingML (modern inline images)
             rid = elem.get(_EMBED)
-        elif tag == "imagedata":   # VML (imágenes legacy / WordArt)
+        elif tag == "imagedata":   # VML (legacy images / WordArt)
             rid = elem.get(_R_ID)
         if rid and rid in rels_map and rid not in vistos:
             rids_en_orden.append(rid)
@@ -67,9 +67,9 @@ def extraer_imagenes_docx(path_docx: Path, output_folder: Path) -> list[Path]:
                 f.write(data)
             rutas_guardadas.append(filepath)
 
-        logger.info("%d imágenes extraídas en '%s'", len(rutas_guardadas), output_folder)
+        logger.info("%d images extracted into '%s'", len(rutas_guardadas), output_folder)
 
     except Exception as e:
-        logger.error("Error extrayendo imágenes: %s", e, exc_info=True)
+        logger.error("Error extracting images: %s", e, exc_info=True)
 
     return rutas_guardadas

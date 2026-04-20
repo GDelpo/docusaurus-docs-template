@@ -230,12 +230,12 @@ async def publish_post(
     """Publish a single approved post to the docs directory."""
     post = await session.get(Post, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post no encontrado")
+        raise HTTPException(status_code=404, detail="Post not found")
 
     if post.status != PostStatus.approved:
         raise HTTPException(
             status_code=400,
-            detail=f"Solo se pueden publicar posts aprobados (estado actual: {post.status})",
+            detail=f"Only approved posts can be published (current status: {post.status})",
         )
 
     file_path = _write_post_to_docs(post)
@@ -249,7 +249,7 @@ async def publish_post(
     return PublishResponse(
         published_count=1,
         file_paths=[file_path],
-        message=f"Post '{post.title}' publicándose — estará disponible en unos minutos",
+        message=f"Post '{post.title}' is publishing — it will be available in a few minutes",
     )
 
 
@@ -271,7 +271,7 @@ async def publish_all_approved(
         return PublishResponse(
             published_count=0,
             file_paths=[],
-            message="No hay posts aprobados para publicar",
+            message="No approved posts to publish",
         )
 
     file_paths = []
@@ -292,7 +292,7 @@ async def publish_all_approved(
     return PublishResponse(
         published_count=len(file_paths),
         file_paths=file_paths,
-        message=f"Publicando {len(file_paths)} post(s) — estarán disponibles en unos minutos",
+        message=f"Publishing {len(file_paths)} post(s) — they will be available in a few minutes",
     )
 
 

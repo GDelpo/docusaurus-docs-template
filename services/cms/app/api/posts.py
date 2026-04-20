@@ -83,7 +83,7 @@ async def get_post(
 ):
     post = await session.get(Post, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post no encontrado")
+        raise HTTPException(status_code=404, detail="Post not found")
     return PostResponse.model_validate(post, from_attributes=True)
 
 
@@ -104,7 +104,7 @@ async def create_post(
     ).scalar_one_or_none()
     if existing:
         raise HTTPException(
-            status_code=409, detail=f"Ya existe un post con slug '{data.slug}'"
+            status_code=409, detail=f"A post with slug '{data.slug}' already exists"
         )
 
     post = Post(
@@ -142,16 +142,16 @@ async def update_post(
 ):
     post = await session.get(Post, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post no encontrado")
+        raise HTTPException(status_code=404, detail="Post not found")
 
     # Only author or admin can edit
     if post.author != user.username and user.role != "admin":
-        raise HTTPException(status_code=403, detail="Solo el autor o un admin puede editar este post")
+        raise HTTPException(status_code=403, detail="Only the author or an admin can edit this post")
 
     # Published posts: only author can create a new draft (admin edits directly)
     if post.status == PostStatus.published and user.role != "admin":
         if post.author != user.username:
-            raise HTTPException(status_code=403, detail="Solo el autor puede editar un post publicado")
+            raise HTTPException(status_code=403, detail="Only the author can edit a published post")
 
     # Save revision before update
     revision = PostRevision(
@@ -197,12 +197,12 @@ async def submit_for_review(
 ):
     post = await session.get(Post, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post no encontrado")
+        raise HTTPException(status_code=404, detail="Post not found")
 
     if post.status != PostStatus.draft:
         raise HTTPException(
             status_code=400,
-            detail=f"Solo se pueden enviar a revisión posts en borrador (estado actual: {post.status})",
+            detail=f"Only draft posts can be submitted for review (current status: {post.status})",
         )
 
     post.status = PostStatus.pending_review
@@ -227,12 +227,12 @@ async def review_post(
 ):
     post = await session.get(Post, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post no encontrado")
+        raise HTTPException(status_code=404, detail="Post not found")
 
     if post.status != PostStatus.pending_review:
         raise HTTPException(
             status_code=400,
-            detail="Solo se pueden revisar posts en estado 'pending_review'",
+            detail="Only posts in 'pending_review' status can be reviewed",
         )
 
     post.reviewer = user.username
@@ -269,12 +269,12 @@ async def delete_post(
 ):
     post = await session.get(Post, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post no encontrado")
+        raise HTTPException(status_code=404, detail="Post not found")
 
     if post.status == PostStatus.published:
         raise HTTPException(
             status_code=400,
-            detail="No se puede eliminar un post publicado. Despublicalo primero.",
+            detail="A published post cannot be deleted. Unpublish it first.",
         )
 
     await session.delete(post)
@@ -294,7 +294,7 @@ async def list_revisions(
 ):
     post = await session.get(Post, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post no encontrado")
+        raise HTTPException(status_code=404, detail="Post not found")
 
     query = (
         select(PostRevision)

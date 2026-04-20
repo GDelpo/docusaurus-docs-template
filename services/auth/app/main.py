@@ -67,14 +67,14 @@ app = FastAPI(
 
 
 def _validate_redirect(redirect: str) -> str:
-    """Valida que el redirect sea una ruta relativa (previene open redirect)."""
+    """Validate that the redirect is a relative path (prevents open redirect)."""
     if not redirect or not redirect.startswith("/"):
         return "/"
     return redirect
 
 
 def _build_login_redirect(request: Request) -> str:
-    """Construye URL de redirect al login usando headers X-Forwarded-*."""
+    """Build redirect URL to the login page using X-Forwarded-* headers."""
     original_host = request.headers.get("X-Forwarded-Host", "docs.example.com")
     original_proto = request.headers.get("X-Forwarded-Proto", "http")
     original_uri = request.headers.get("X-Forwarded-Uri", "/")
@@ -82,22 +82,22 @@ def _build_login_redirect(request: Request) -> str:
 
 
 # =============================================================================
-# ForwardAuth endpoint (llamado por Traefik internamente)
+# ForwardAuth endpoint (called by Traefik internally)
 # =============================================================================
 
 
 @app.get("/verify")
 async def verify(request: Request):
-    """Endpoint ForwardAuth. Traefik lo llama en cada request a docs.
+    """ForwardAuth endpoint. Traefik calls it on every request to docs.
 
-    - 200: sesión válida (JWT verificado por identity), deja pasar
-    - 302: sin sesión o inválida, redirige al login
+    - 200: valid session (JWT verified by identity), let it through
+    - 302: no session or invalid, redirect to login
     """
     token = request.cookies.get(settings.cookie_name)
 
     if token:
         try:
-            # Validar JWT llamando al servicio de identity
+            # Validate JWT by calling the identity service
             client: httpx.AsyncClient = request.app.state.http_client
             response = await client.get(
                 settings.identity_me_url,
@@ -106,7 +106,7 @@ async def verify(request: Request):
 
             if response.status_code == 200:
                 user_data = response.json()
-                logger.debug("Sesión válida: %s", user_data.get("userName", user_data.get("user_name", "")))
+                logger.debug("Valid session: %s", user_data.get("userName", user_data.get("user_name", "")))
                 return Response(
                     status_code=200,
                     headers={
@@ -116,16 +116,16 @@ async def verify(request: Request):
                 )
 
             if response.status_code == 401:
-                logger.info("JWT expirado o inválido")
+                logger.info("Expired or invalid JWT")
             else:
-                logger.warning("Respuesta inesperada de identity: %s", response.status_code)
+                logger.warning("Unexpected response from identity: %s", response.status_code)
 
         except httpx.RequestError as e:
-            logger.error("Error conectando a identity para verificar: %s", e)
-            # Fail-close: si identity no responde, redirigir al login
-            # (seguridad sobre disponibilidad)
+            logger.error("Error connecting to identity for verification: %s", e)
+            # Fail-close: if identity does not respond, redirect to login
+            # (security over availability)
 
-    # Sin sesión válida → redirect al login
+    # No valid session -> redirect to login
     redirect_url = _build_login_redirect(request)
     return RedirectResponse(url=redirect_url, status_code=302)
 
@@ -137,8 +137,8 @@ async def verify(request: Request):
 
 @app.get("/auth/login", response_class=HTMLResponse)
 async def login_page(request: Request, redirect: str = "/", error: str | None = None):
-    """Página de login."""
-    # Si ya está autenticado (cookie con JWT válido), redirigir
+    """Login page."""
+    # If already authenticated (cookie with valid JWT), redirect
     token = request.cookies.get(settings.cookie_name)
     if token:
         try:
@@ -150,7 +150,7 @@ async def login_page(request: Request, redirect: str = "/", error: str | None = 
             if response.status_code == 200:
                 return RedirectResponse(url=_validate_redirect(redirect), status_code=302)
         except httpx.RequestError:
-            pass  # Ignorar error, mostrar login
+            pass  # Ignore error, show login
 
     return templates.TemplateResponse("login.html", {
         "request": request,
@@ -166,7 +166,7 @@ async def login_submit(
     password: str = Form(...),
     redirect: str = Form("/"),
 ):
-    """Procesa el form de login. Valida contra el servicio de identity."""
+    """Process the login form. Validates against the identity service."""
     redirect = _validate_redirect(redirect)
 
     try:
@@ -181,28 +181,28 @@ async def login_submit(
             access_token = token_data.get("accessToken", token_data.get("access_token", ""))
 
             if not access_token:
-                logger.error("Identidad no devolvió access_token")
+                logger.error("Identity did not return access_token")
                 return templates.TemplateResponse("login.html", {
                     "request": request,
                     "redirect": redirect,
-                    "error": "Error en el servicio de autenticación",
+                    "error": "Authentication service error",
                 }, status_code=500)
 
-            logger.info("Login exitoso: %s", username)
+            logger.info("Login successful: %s", username)
 
             resp = RedirectResponse(url=redirect, status_code=302)
             resp.set_cookie(
                 key=settings.cookie_name,
-                value=access_token,  # Guardamos el JWT directo
+                value=access_token,  # Store the JWT directly
                 httponly=True,
                 samesite="lax",
                 secure=settings.cookie_secure,
                 path="/",
-                # No ponemos max_age - la expiración la controla el JWT
+                # We don't set max_age - expiration is controlled by the JWT
             )
             return resp
 
-        # Credenciales inválidas u otro error
+        # Invalid credentials or other error
         error_detail = ""
         try:
             error_body = response.json()
@@ -210,20 +210,20 @@ async def login_submit(
         except Exception:
             pass
 
-        logger.info("Login fallido para '%s': %s", username, error_detail or response.status_code)
+        logger.info("Login failed for '%s': %s", username, error_detail or response.status_code)
 
         return templates.TemplateResponse("login.html", {
             "request": request,
             "redirect": redirect,
-            "error": error_detail or "Credenciales inválidas",
+            "error": error_detail or "Invalid credentials",
         }, status_code=401)
 
     except httpx.RequestError as e:
-        logger.error("Error conectando al servicio de identity: %s", e)
+        logger.error("Error connecting to identity service: %s", e)
         return templates.TemplateResponse("login.html", {
             "request": request,
             "redirect": redirect,
-            "error": "Servicio de autenticación no disponible",
+            "error": "Authentication service unavailable",
         }, status_code=503)
 
 
@@ -234,10 +234,10 @@ async def login_submit(
 
 @app.get("/auth/logout")
 async def logout(redirect: str = "/auth/login"):
-    """Cierra la sesión (borra cookie) y redirige al login.
+    """Log out (clears cookie) and redirect to login.
 
-    El parámetro `redirect` permite volver a una URL específica después del login.
-    Ejemplo: /auth/logout?redirect=%2Fdashboard → redirige a /auth/login?redirect=/dashboard
+    The `redirect` parameter allows returning to a specific URL after login.
+    Example: /auth/logout?redirect=%2Fdashboard -> redirects to /auth/login?redirect=/dashboard
     """
     if redirect != "/auth/login" and redirect.startswith("/"):
         target = f"/auth/login?redirect={quote(redirect, safe='/')}"

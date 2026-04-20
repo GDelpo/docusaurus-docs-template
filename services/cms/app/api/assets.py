@@ -67,23 +67,23 @@ async def upload_asset(
 ):
     """Upload an asset (image or download) to a specific post."""
     if kind not in ("images", "downloads"):
-        raise HTTPException(status_code=400, detail="Tipo debe ser 'images' o 'downloads'")
+        raise HTTPException(status_code=400, detail="Type must be 'images' or 'downloads'")
 
     post = await session.get(Post, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post no encontrado")
+        raise HTTPException(status_code=404, detail="Post not found")
 
     # Validate file type
     ct = file.content_type or "application/octet-stream"
     if ct not in ALL_ALLOWED:
         raise HTTPException(
             status_code=400,
-            detail=f"Tipo de archivo no permitido: {ct}",
+            detail=f"File type not allowed: {ct}",
         )
 
     # For images folder, only accept images
     if kind == "images" and ct not in IMAGE_TYPES:
-        raise HTTPException(status_code=400, detail="Solo se permiten imágenes en /images")
+        raise HTTPException(status_code=400, detail="Only images are allowed in /images")
 
     # Read and check size
     content = await file.read()
@@ -91,8 +91,8 @@ async def upload_asset(
     if len(content) > max_bytes:
         raise HTTPException(
             status_code=400,
-            detail=f"Archivo demasiado grande ({len(content) / 1024 / 1024:.1f} MB). "
-            f"Máximo: {settings.max_upload_size_mb} MB",
+            detail=f"File too large ({len(content) / 1024 / 1024:.1f} MB). "
+            f"Max: {settings.max_upload_size_mb} MB",
         )
 
     # Preserve original name but make it safe (no path traversal)
@@ -156,7 +156,7 @@ async def list_post_assets(
     """List all assets for a post (images + downloads)."""
     post = await session.get(Post, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post no encontrado")
+        raise HTTPException(status_code=404, detail="Post not found")
 
     result = {"images": [], "downloads": []}
     for kind in ("images", "downloads"):
@@ -188,16 +188,16 @@ async def list_post_assets(
 async def serve_asset(post_id: int, kind: str, filename: str):
     """Serve a post asset file."""
     if kind not in ("images", "downloads"):
-        raise HTTPException(status_code=400, detail="Tipo debe ser 'images' o 'downloads'")
+        raise HTTPException(status_code=400, detail="Type must be 'images' or 'downloads'")
 
     asset_root = _asset_dir(post_id, kind).resolve()
     file_path = (asset_root / filename).resolve()
 
     # Prevent path traversal
     if not file_path.is_relative_to(asset_root):
-        raise HTTPException(status_code=403, detail="Acceso denegado")
+        raise HTTPException(status_code=403, detail="Access denied")
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+        raise HTTPException(status_code=404, detail="File not found")
 
     from starlette.responses import FileResponse
     return FileResponse(file_path, media_type=None, filename=filename)
@@ -218,23 +218,23 @@ async def delete_asset(
 ):
     """Delete a specific asset from a post."""
     if kind not in ("images", "downloads"):
-        raise HTTPException(status_code=400, detail="Tipo debe ser 'images' o 'downloads'")
+        raise HTTPException(status_code=400, detail="Type must be 'images' or 'downloads'")
 
     post = await session.get(Post, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post no encontrado")
+        raise HTTPException(status_code=404, detail="Post not found")
 
     # Only author or admin
     if post.author != user.username and user.role != "admin":
-        raise HTTPException(status_code=403, detail="Sin permiso para eliminar este recurso")
+        raise HTTPException(status_code=403, detail="Not permitted to delete this asset")
 
     asset_root = _asset_dir(post_id, kind).resolve()
     file_path = (asset_root / filename).resolve()
 
     if not file_path.is_relative_to(asset_root):
-        raise HTTPException(status_code=403, detail="Acceso denegado")
+        raise HTTPException(status_code=403, detail="Access denied")
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+        raise HTTPException(status_code=404, detail="File not found")
 
     file_path.unlink()
 

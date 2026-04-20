@@ -4,7 +4,7 @@ import Link from '@docusaurus/Link';
 
 export default function NotFound() {
   return (
-    <Layout title="Página no encontrada">
+    <Layout title="Page not found">
       <main style={{
         display: 'flex',
         flexDirection: 'column',
@@ -28,13 +28,13 @@ export default function NotFound() {
           color: 'var(--ifm-color-emphasis-700)',
           marginTop: '1rem',
         }}>
-          Página no encontrada
+          Page not found
         </p>
-        <p style={{ 
+        <p style={{
           color: 'var(--ifm-color-emphasis-600)',
           maxWidth: '400px',
         }}>
-          Lo sentimos, la página que buscas no existe o fue movida.
+          Sorry, the page you are looking for does not exist or has been moved.
         </p>
         <div style={{ 
           display: 'flex', 
@@ -54,10 +54,10 @@ export default function NotFound() {
               fontWeight: 500,
             }}
           >
-            🏠 Ir al inicio
+            Home
           </Link>
           <Link
-            to="/inicio/instructivos"
+            to="/inicio/welcome"
             style={{
               padding: '0.75rem 1.5rem',
               background: 'var(--ifm-color-emphasis-200)',
@@ -67,7 +67,7 @@ export default function NotFound() {
               fontWeight: 500,
             }}
           >
-            📚 Ver instructivos
+            Getting started
           </Link>
         </div>
       </main>

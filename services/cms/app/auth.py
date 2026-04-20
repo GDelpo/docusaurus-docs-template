@@ -1,4 +1,4 @@
-"""Authentication dependencies — validates JWT against identity service."""
+"""Authentication dependencies — validates JWT against Identity service."""
 
 from typing import Annotated
 
@@ -17,7 +17,7 @@ async def get_current_user(request: Request) -> CurrentUser:
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token no proporcionado",
+            detail="Token not provided",
         )
 
     try:
@@ -29,13 +29,13 @@ async def get_current_user(request: Request) -> CurrentUser:
     except httpx.RequestError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Servicio de identity no disponible",
+            detail="Identity service unavailable",
         )
 
     if resp.status_code != 200:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o expirado",
+            detail="Invalid or expired token",
         )
 
     data = resp.json()
@@ -52,7 +52,7 @@ async def get_admin_user(user: CurrentUser = Depends(get_current_user)) -> Curre
     if user.role != ADMIN_ROLE:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requiere rol de administrador",
+            detail="Administrator role required",
         )
     return user
 

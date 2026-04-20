@@ -41,13 +41,13 @@ async def import_docx(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Recibe un .docx, extrae imágenes → las sube al media del CMS,
-    convierte el texto a Markdown y retorna { content: "..." }.
+    Receive a .docx, extract images -> upload them to the CMS media store,
+    convert the text to Markdown and return { content: "..." }.
     """
     if file.content_type != DOCX_CONTENT_TYPE:
         raise HTTPException(
             status_code=400,
-            detail="Solo se aceptan archivos .docx",
+            detail="Only .docx files are accepted",
         )
 
     content_bytes = await file.read()
@@ -56,7 +56,7 @@ async def import_docx(
     if len(content_bytes) > max_bytes:
         raise HTTPException(
             status_code=400,
-            detail=f"Archivo demasiado grande. Máximo: {settings.max_upload_size_mb} MB",
+            detail=f"File too large. Max: {settings.max_upload_size_mb} MB",
         )
 
     try:
@@ -67,11 +67,11 @@ async def import_docx(
             async with aiofiles.open(docx_path, "wb") as f:
                 await f.write(content_bytes)
 
-            # 1. Extraer imágenes al directorio temporal
+            # 1. Extract images to the temporary directory
             img_tmp_dir = tmp_path / "img"
             rutas_imagenes = extraer_imagenes_docx(docx_path, img_tmp_dir)
 
-            # 2. Subir cada imagen al media del CMS
+            # 2. Upload each image to the CMS media store
             media_urls: list[str] = []
             media_dir = Path(settings.media_dir)
             media_dir.mkdir(parents=True, exist_ok=True)
@@ -81,7 +81,7 @@ async def import_docx(
                 unique_name = f"{uuid.uuid4().hex}{ext}"
                 dest_path = media_dir / unique_name
 
-                # Copiar bytes al media dir
+                # Copy bytes to the media dir
                 async with aiofiles.open(img_path, "rb") as f:
                     img_bytes = await f.read()
                 async with aiofiles.open(dest_path, "wb") as f:
@@ -89,7 +89,7 @@ async def import_docx(
 
                 ct = _CONTENT_TYPE_MAP.get(ext, "image/png")
 
-                # Obtener dimensiones si es imagen rasterizada
+                # Get dimensions if it is a raster image
                 width, height = None, None
                 if ct != "image/svg+xml":
                     try:
@@ -102,7 +102,7 @@ async def import_docx(
                     except Exception:
                         pass
 
-                # Guardar registro en BD
+                # Persist record in DB
                 media = Media(
                     filename=unique_name,
                     original_name=img_path.name,
@@ -118,14 +118,14 @@ async def import_docx(
 
                 media_urls.append(f"/admin/api/v1/media/file/{unique_name}")
 
-            # 3. Convertir texto a Markdown con markitdown
+            # 3. Convert text to Markdown using markitdown
             from markitdown import MarkItDown
 
             md_engine = MarkItDown(enable_plugins=True)
             result = md_engine.convert(str(docx_path))
             markdown = result.text_content
 
-            # 4. Reemplazar data URIs base64 de markitdown por URLs del media, en orden.
+            # 4. Replace markitdown's base64 data URIs with media URLs, in order.
             # markitdown embeds images as data:image/... URIs, sometimes wrapped in **...**
             # Use regex to match regardless of surrounding markdown syntax.
             import re as _re
@@ -151,7 +151,7 @@ async def import_docx(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail="Error al convertir el documento",
+            detail="Error converting the document",
         ) from e
 
     return ImportResponse(content=markdown)

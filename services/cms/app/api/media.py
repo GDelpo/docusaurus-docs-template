@@ -52,8 +52,8 @@ async def upload_file(
     if not file.content_type or file.content_type not in ALLOWED_TYPES:
         raise HTTPException(
             status_code=400,
-            detail=f"Tipo de archivo no permitido: {file.content_type}. "
-            f"Permitidos: {', '.join(sorted(ALLOWED_TYPES))}",
+            detail=f"File type not allowed: {file.content_type}. "
+            f"Allowed: {', '.join(sorted(ALLOWED_TYPES))}",
         )
 
     # Read and check size
@@ -62,8 +62,8 @@ async def upload_file(
     if len(content) > max_bytes:
         raise HTTPException(
             status_code=400,
-            detail=f"Archivo demasiado grande ({len(content) / 1024 / 1024:.1f} MB). "
-            f"Máximo: {settings.max_upload_size_mb} MB",
+            detail=f"File too large ({len(content) / 1024 / 1024:.1f} MB). "
+            f"Max: {settings.max_upload_size_mb} MB",
         )
 
     # Generate unique filename
@@ -152,10 +152,10 @@ async def serve_file(filename: str):
 
     # Prevent path traversal (e.g. ../../etc/passwd)
     if not file_path.is_relative_to(media_root):
-        raise HTTPException(status_code=403, detail="Acceso denegado")
+        raise HTTPException(status_code=403, detail="Access denied")
 
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+        raise HTTPException(status_code=404, detail="File not found")
 
     from starlette.responses import FileResponse
 
@@ -180,7 +180,7 @@ async def delete_media(
     """Delete an uploaded file."""
     media = await session.get(Media, media_id)
     if not media:
-        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+        raise HTTPException(status_code=404, detail="File not found")
 
     # Delete file from disk
     try:
